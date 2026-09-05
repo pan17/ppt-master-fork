@@ -28,14 +28,14 @@ page_count: 5
 | Delivery and reading assumptions | Primarily presented in meetings, while remaining legible for handoff and close review; page meaning must remain recognizable without speaker narration |
 | Representative narrative/page roles | Cover, table of contents, chapter divider, open content page, and closing page |
 
-The template preserves the source's light, premium corporate visual language: full-bleed photographic backgrounds, black typography on light content pages, and white typography on cover and ending pages; the content prototype uses an open content area without any decorative border. The page prototypes form five distinct reusable page families under one FII master identity.
+The template preserves the source's light, premium corporate visual language: full-bleed photographic backgrounds, black primary typography on light content pages, white page-number folios, and white typography on cover and ending pages; the content prototype uses an open content area without any decorative border. The page prototypes form five distinct reusable page families under one FII master identity.
 
 ## II. Color Scheme
 
 | Role | Color | Application |
 | --- | --- | --- |
-| Black | #000000 | Content, chapter, TOC, and page-number text |
-| White | #FFFFFF | Cover and ending text |
+| Black | #000000 | Content, chapter, and TOC text |
+| White | #FFFFFF | Cover, ending, and page-number text |
 | Deep blue | #001F45 | Ending rounded translucent text panel |
 
 ## III. Typography
@@ -51,10 +51,10 @@ The source hierarchy uses a 72px cover title, 44–48px page and chapter heading
 
 - Full-canvas direct picture atoms use `cover_bg.jpg`, `content_bg.jpg`, or `ending_bg.jpg` without a defs/use indirection.
 - Cover and ending pages use centered white typography over photographic backgrounds.
-- TOC, chapter, and content pages use black typography over the shared content background, with no decorative bars, accent lines, or content-area dashed frames.
+- TOC, chapter, and content pages use black typography over the shared content background, with white page-number folios at the lower right and no decorative bars, accent lines, or content-area dashed frames.
 - The ending prototype retains the deep-blue `#001F45` rounded translucent overlay behind the closing text.
 - All reusable content regions are top-level slot groups with one direct native carrier.
-- Page-number folio on TOC, chapter, and content pages is a **locked visual anchor**. Slot bounds `(1135, 689)–(1230, 713)` and carrier anchor `(x=1230, y=714, text-anchor="end")` are fixed by the template. The slot carries `data-pptx-locked="true"` and `data-pptx-locked-anchor="1230 714"`; the carrier carries `data-pptx-locked-carrier="true"`. Downstream authoring must not rewrite these coordinates, reposition the folio toward any background shape (e.g. a coloured panel inside `content_bg.jpg`), or alter slot dimensions. The folio is a non-overridable template fixture.
+- Page-number folio on TOC, chapter, and content pages is a **locked visual anchor**. Slot bounds `(1125, 699)–(1220, 723)` and carrier anchor `(x=1220, y=714, text-anchor="end")` are fixed by the template. The slot carries `data-pptx-locked="true"` and `data-pptx-locked-anchor="1220 714"`; the carrier carries `data-pptx-locked-carrier="true"`. Downstream authoring must not rewrite these coordinates, reposition the folio toward any background shape (e.g. a coloured panel inside `content_bg.jpg`), or alter slot dimensions. The folio is a non-overridable template fixture.
 
 ## V. Page Roster
 
