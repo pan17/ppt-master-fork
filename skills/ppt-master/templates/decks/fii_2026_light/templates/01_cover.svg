@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-master="fii_light_master" data-pptx-master-name="FII Light Master" data-pptx-layout="cover" data-pptx-layout-name="Cover">
+  <image id="cover-background" x="0" y="0" width="1280" height="720" href="../images/cover_bg.jpg" preserveAspectRatio="xMidYMid slice" data-pptx-layer="layout" data-pptx-editable="false"/>
+  <g id="cover-title-slot" data-pptx-placeholder="title" data-pptx-bounds="80 210 480 100"><text id="cover-title-carrier" x="320" y="280" text-anchor="middle" fill="#FFFFFF" font-family="Source Han Sans CN Heavy, Microsoft YaHei, 微软雅黑, sans-serif" font-size="72" font-weight="bold" data-pptx-carrier="true">{{TITLE}}</text></g>
+  <g id="cover-subtitle-slot" data-pptx-placeholder="subtitle" data-pptx-idx="1" data-pptx-bounds="80 330 480 60"><text id="cover-subtitle-carrier" x="320" y="370" text-anchor="middle" fill="#FFFFFF" font-family="Source Han Sans CN Heavy, Microsoft YaHei, 微软雅黑, sans-serif" font-size="32" data-pptx-carrier="true">{{SUBTITLE}}</text></g>
+  <g id="cover-date-slot" data-pptx-placeholder="date" data-pptx-idx="2" data-pptx-bounds="80 550 480 42"><text id="cover-date-carrier" x="320" y="580" text-anchor="middle" fill="#FFFFFF" font-family="Microsoft YaHei, 微软雅黑, sans-serif" font-size="18" data-pptx-carrier="true">{{DATE}}</text></g>
+  <g id="cover-author-slot" data-pptx-placeholder="body" data-pptx-idx="3" data-pptx-bounds="80 595 480 36"><text id="cover-author-carrier" x="320" y="620" text-anchor="middle" fill="#FFFFFF" font-family="Microsoft YaHei, 微软雅黑, sans-serif" font-size="16" data-pptx-carrier="true">{{AUTHOR}}</text></g>
+</svg>
