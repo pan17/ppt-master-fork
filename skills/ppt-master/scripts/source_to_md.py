@@ -21,6 +21,7 @@ Dependencies:
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import os
 import subprocess
@@ -91,14 +92,17 @@ def _dispatch_output_arg(
         batch_mode = True
     if output_arg and batch_mode and conversion_type == "web":
         return None
-    if output_arg and batch_mode:
-        return str(
-            unique_output_path(
-                Path(output_arg),
-                default_markdown_path(input_arg).stem,
-                used_outputs,
+    if batch_mode and conversion_type != "web":
+        default_output = default_markdown_path(input_arg)
+        if output_arg:
+            default_output = Path(output_arg) / default_output.name
+        output = unique_output_path(default_output.parent, default_output.stem, used_outputs)
+        if output != default_output:
+            _print_status(
+                f"[INFO] Renamed output for {input_arg}: {default_output} -> {output} "
+                "(input/output collision)"
             )
-        )
+        return str(output)
     if output_arg:
         # One input with an extension-less -o names the Markdown file, not a
         # directory: `-o sources_cf` writes `sources_cf.md` (a directory is
@@ -106,8 +110,6 @@ def _dispatch_output_arg(
         if not Path(output_arg).suffix:
             return f"{output_arg}.md"
         return output_arg
-    if batch_mode and conversion_type != "web":
-        return str(default_markdown_path(input_arg))
     return None
 
 
@@ -144,20 +146,54 @@ def write_passthrough(
     """Copy text-like input to Markdown and write the profile sidecar."""
     source = Path(input_arg)
     try:
-        text = source.read_text(encoding="utf-8", errors="replace")
+        raw = source.read_bytes()
     except OSError as exc:
         print(f"[ERROR] Cannot read {source}: {exc}", file=sys.stderr)
         return 1
 
+    encodings = ("utf-8", "gb18030")
+    if raw.startswith(codecs.BOM_UTF8):
+        encodings = ("utf-8-sig",)
+    elif raw.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        encodings = ("utf-16",)
+    for encoding in encodings:
+        try:
+            text = raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        print(
+            f"[ERROR] Cannot decode {source} as {' or '.join(encodings)}. "
+            "Save the source as UTF-8 text and retry.",
+            file=sys.stderr,
+        )
+        return 1
+    if any(ord(char) < 32 and char not in "\t\n\r\f" for char in text):
+        print(f"[ERROR] Binary control characters in {source}; provide a text file.", file=sys.stderr)
+        return 1
+    if encoding != "utf-8" and output.resolve() == source.resolve():
+        print(
+            f"[ERROR] {source} uses {encoding}; choose a different -o path for UTF-8 output.",
+            file=sys.stderr,
+        )
+        return 1
+
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.resolve() != source.resolve():
-        output.write_text(text, encoding="utf-8")
+        output.write_bytes(text.encode("utf-8"))
+    warnings = []
+    if encoding != "utf-8":
+        warnings.append(f"Detected source encoding: {encoding}; converted to UTF-8.")
     profile = write_conversion_profile(
         input_path=input_arg,
         markdown_path=output,
         converter="source_to_md.py",
         conversion_type=conversion_type,
+        warnings=warnings,
     )
+    for warning in warnings:
+        print(f"[INFO] {warning}")
     _print_status(f"[OK] Saved Markdown to: {output}")
     _print_status(f"   Wrote conversion profile -> {profile}")
     print_output(output)
@@ -462,17 +498,35 @@ def dispatch_many(
         if output_dir.exists() and not output_dir.is_dir():
             print(f"[ERROR] Batch output path is not a directory: {args.output}", file=sys.stderr)
             return 1
-        output_dir.mkdir(parents=True, exist_ok=True)
 
-    used_outputs: set[Path] = set()
-    for input_arg, conversion_type in zip(inputs, conversion_types):
-        output_arg = _dispatch_output_arg(
+    input_paths = {Path(item).resolve() for item in inputs if not is_url(item)}
+    used_outputs = set(input_paths)
+    output_args = [
+        _dispatch_output_arg(
             input_arg,
             conversion_type,
             args.output,
             batch_mode,
             used_outputs,
         )
+        for input_arg, conversion_type in zip(inputs, conversion_types)
+    ]
+    if args.output and not batch_mode and output_args:
+        output = Path(output_args[0])
+        own_passthrough = (
+            output.resolve() in input_paths and conversion_types[0] in {"markdown", "text"}
+        )
+        if output.exists() and not own_passthrough:
+            print(
+                f"[ERROR] Refusing to overwrite existing file: {output}. Choose a different -o path.",
+                file=sys.stderr,
+            )
+            return 1
+
+    if args.output and batch_mode:
+        Path(args.output).mkdir(parents=True, exist_ok=True)
+
+    for input_arg, conversion_type, output_arg in zip(inputs, conversion_types, output_args):
         web_output_dir = (
             args.output
             if args.output and batch_mode and conversion_type == "web"
