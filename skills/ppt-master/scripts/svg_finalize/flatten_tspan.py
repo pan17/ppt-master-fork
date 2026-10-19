@@ -175,6 +175,11 @@ def copy_text_attrs(
         v = src_el.get(k)
         if v is not None:
             dst_el.set(k, v)
+    # A split row must retain the imported baseline/inset convention, even
+    # though the version marker is not an inherited SVG presentation property.
+    baseline_attr = "data-pptx-text-baseline"
+    if baseline_attr not in exclude and src_el.get(baseline_attr) is not None:
+        dst_el.set(baseline_attr, src_el.get(baseline_attr))
     # xml:space preservation
     xml_space = src_el.get("{http://www.w3.org/XML/1998/namespace}space")
     if xml_space is not None and "{http://www.w3.org/XML/1998/namespace}space" not in exclude:
@@ -264,7 +269,10 @@ def _build_paragraph_child_view(
 
     raw_lead = text_el.text or ""
     synthetic_first: ET.Element | None = None
-    if raw_lead.strip():
+    # A first visual line may also open with an inline run (a bold lead word)
+    # and no direct text; it is the same leading line with an empty prefix.
+    leads_with_inline_run = bool(direct_tspans) and not _is_new_line_tspan(direct_tspans[0])
+    if raw_lead.strip() or leads_with_inline_run:
         base_x_raw = get_attr(text_el, "x")
         if base_x_raw is None:
             return None

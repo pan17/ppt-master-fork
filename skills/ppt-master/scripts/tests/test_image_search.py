@@ -183,6 +183,33 @@ class CandidatePoolContinuationTests(unittest.TestCase):
                 self.assertGreater(image.getpixel((3, 3))[0], 150)
             self.assertFalse(image_search._normalize_multi_frame_jpeg(path))
 
+    def test_original_above_pillow_warning_size_is_halved_quietly(self) -> None:
+        import warnings
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "takin.jpg"
+
+            def materialize(path: Path) -> None:
+                Image.new("RGB", (200, 150), (120, 90, 60)).save(path, "JPEG")
+
+            with patch.object(Image, "MAX_IMAGE_PIXELS", 20_000), \
+                    warnings.catch_warnings(record=True) as caught, \
+                    redirect_stderr(io.StringIO()) as stderr:
+                warnings.simplefilter("always")
+                staged, size = image_search._stage_and_validate_image(
+                    target, materialize, min_width=0, min_height=0,
+                    enforce_thumbnail_floor=False,
+                )
+
+            self.assertEqual(size, (100, 75))
+            self.assertIn("downscaled a 200x150 original to 100x75", stderr.getvalue())
+            self.assertFalse(
+                [w for w in caught if issubclass(w.category, Image.DecompressionBombWarning)]
+            )
+            staged.unlink()
+
     def test_multi_frame_camera_jpeg_bakes_exif_orientation(self) -> None:
         from PIL import Image
 
@@ -198,3 +225,48 @@ class CandidatePoolContinuationTests(unittest.TestCase):
                 self.assertEqual(image.format, "JPEG")
                 self.assertEqual(image.size, (48, 64))
                 self.assertNotIn(274, image.getexif())
+
+
+class InfrastructurePenaltyTests(unittest.TestCase):
+    def _score(self, query: str, title: str) -> float:
+        from image_sources.provider_common import (
+            LICENSE_TIER_NO_ATTRIBUTION,
+            AssetCandidate,
+            ImageSearchRequest,
+            score_candidate,
+        )
+
+        candidate = AssetCandidate(
+            provider="test",
+            title=title,
+            license_tier=LICENSE_TIER_NO_ATTRIBUTION,
+            width=1600,
+            height=900,
+        )
+        return score_candidate(candidate, ImageSearchRequest(query=query))
+
+    def test_words_containing_transit_terms_are_not_penalized(self) -> None:
+        baseline = self._score("team", "team office")
+        for title in ("team business", "team trail", "team 网站"):
+            with self.subTest(title=title):
+                self.assertEqual(self._score("team", title), baseline)
+
+    def test_transit_photo_is_penalized_unless_requested(self) -> None:
+        self.assertLess(
+            self._score("team", "team bus station"),
+            self._score("team", "team office"),
+        )
+        self.assertGreater(self._score("bus station", "team bus station"), 0)
+
+
+class RequiredTermsGateTests(unittest.TestCase):
+    def test_latin_terms_match_whole_words_and_cjk_ignores_spacing(self) -> None:
+        from image_sources.provider_common import AssetCandidate, missing_required_terms
+
+        def missing(title: str, terms: tuple[str, ...]) -> list[str]:
+            return missing_required_terms(AssetCandidate(provider="test", title=title), terms)
+
+        self.assertEqual(missing("Tirana, Albania", ("Iran",)), ["Iran"])
+        self.assertEqual(missing("Tehran, Iran", ("Iran",)), [])
+        self.assertEqual(missing("LiberationMonument at night", ("Liberation Monument",)), [])
+        self.assertEqual(missing("重庆 解放 碑", ("解放碑",)), [])
