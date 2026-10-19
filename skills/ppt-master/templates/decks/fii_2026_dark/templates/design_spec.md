@@ -53,7 +53,7 @@ The source hierarchy uses a 72px cover title, 36–48px page and chapter heading
 - Cover and ending pages use centered title clusters; chapter, TOC, and content pages use a left-aligned information hierarchy.
 - TOC, chapter, and content pages contain no decorative bars, accent lines, or content-area border frames.
 - Every reusable content region is a top-level slot group with one direct native carrier.
-- Page-number folio on TOC, chapter, and content pages is a **locked visual anchor**. Slot bounds `(1135, 689)–(1230, 713)` and carrier anchor `(x=1230, y=714, text-anchor="end")` are fixed by the template. The slot carries `data-pptx-locked="true"` and `data-pptx-locked-anchor="1230 714"`; the carrier carries `data-pptx-locked-carrier="true"`. Downstream authoring must not rewrite these coordinates, reposition the folio toward any background shape (e.g. a coloured panel inside `content_bg.jpg`), or alter slot dimensions. The folio is a non-overridable template fixture.
+- Page-number folio on TOC, chapter, and content pages is a **locked visual anchor**. Slot bounds `(1135, 699)–(1230, 723)` and carrier anchor `(x=1230, y=714, text-anchor="end")` are fixed by the template. The slot carries `data-pptx-locked="true"` and `data-pptx-locked-anchor="1230 714"`; the carrier carries `data-pptx-locked-carrier="true"`. Downstream authoring must not rewrite these coordinates, reposition the folio toward any background shape (e.g. a coloured panel inside `content_bg.jpg`), or alter slot dimensions. The folio is a non-overridable template fixture.
 
 ## V. Page Roster
 
